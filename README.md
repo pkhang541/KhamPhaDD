@@ -13,8 +13,6 @@
 
 ### 2. Bản Đồ Tương Tác Trực Quan (Interactive Map)
 *   **Giao diện bản đồ full-screen:** Sử dụng Leaflet & React Leaflet tích hợp cụm điểm (`MarkerCluster`) giúp hiển thị hàng trăm địa điểm mượt mà.
-*   **Đóng góp địa điểm (Discovery flow):** Cho phép người dùng đóng góp các địa điểm mới trực tiếp trên bản đồ kèm theo tải lên nhiều hình ảnh (gallery).
-
 ### 3. Công Cụ Lên Lịch Trình Cá Nhân (Trip Builder)
 *   **Lên lịch trình chuyên nghiệp:** Gom nhóm các địa điểm đã chọn theo từng ngày (Ngày 1, Ngày 2...).
 *   **Kéo thả trực quan (Drag & Drop):** Thay đổi thứ tự ghé thăm hoặc chuyển địa điểm giữa các ngày cực kỳ mượt mà nhờ `@dnd-kit`.
