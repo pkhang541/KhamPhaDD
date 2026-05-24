@@ -55,6 +55,8 @@ class PlaceTest extends TestCase
         $this->assertStringContainsString("default-src 'self'", $csp);
         $this->assertStringContainsString("object-src 'none'", $csp);
         $this->assertStringContainsString("frame-ancestors 'self'", $csp);
+        $this->assertStringContainsString("script-src 'self' 'nonce-", $csp);
+        $this->assertStringNotContainsString("script-src 'self' 'unsafe-inline'", $csp);
         $this->assertStringContainsString("frame-src 'self' https://www.openstreetmap.org", $csp);
     }
 
