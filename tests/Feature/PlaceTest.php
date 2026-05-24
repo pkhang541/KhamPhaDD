@@ -39,6 +39,25 @@ class PlaceTest extends TestCase
         $response->assertSee('The Coffee House');
     }
 
+    public function test_home_page_sends_security_headers(): void
+    {
+        $response = $this->get('/');
+
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $response->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+        $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->assertHeader('Cross-Origin-Resource-Policy', 'same-origin');
+        $response->assertHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        $response->assertHeader('Permissions-Policy', 'camera=(), microphone=(), payment=(), usb=(), geolocation=(self)');
+
+        $csp = $response->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString("default-src 'self'", $csp);
+        $this->assertStringContainsString("object-src 'none'", $csp);
+        $this->assertStringContainsString("frame-ancestors 'self'", $csp);
+        $this->assertStringContainsString("frame-src 'self' https://www.openstreetmap.org", $csp);
+    }
+
     public function test_can_view_place_detail(): void
     {
         $response = $this->get('/places/the-coffee-house');

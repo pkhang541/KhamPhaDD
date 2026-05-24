@@ -237,6 +237,8 @@ class TripController extends Controller
     public function removePlace(Trip $trip, TripPlace $tripPlace)
     {
         if ($trip->user_id !== auth()->id()) abort(403);
+        if ($tripPlace->trip_id !== $trip->id) abort(404);
+
         $tripPlace->delete();
         return back()->with('success', 'Đã xóa địa điểm.');
     }
@@ -245,6 +247,7 @@ class TripController extends Controller
     public function updatePlaceTime(Request $request, Trip $trip, TripPlace $tripPlace)
     {
         if ($trip->user_id !== auth()->id()) abort(403);
+        if ($tripPlace->trip_id !== $trip->id) abort(404);
 
         $data = $request->validate([
             'visit_time'       => 'nullable|date_format:H:i',

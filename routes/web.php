@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 // Trang chủ
 Route::get('/', [PlaceController::class, 'home'])->name('home');
-Route::post('/chatbot/message', [ChatbotController::class, 'message'])->name('chatbot.message');
+Route::post('/chatbot/message', [ChatbotController::class, 'message'])->middleware('throttle:10,1')->name('chatbot.message');
 
 // Predictive search (typeahead)
 Route::get('/autocomplete', [PlaceController::class, 'autocomplete'])->name('places.autocomplete');
@@ -103,22 +103,25 @@ Route::middleware('auth')->group(function () {
         }
 
         return response()->json($user);
-    })->name('users.byEmail');
+    })->middleware('throttle:20,1')->name('users.byEmail');
 
     Route::get('/users/search', function (\Illuminate\Http\Request $request) {
-        $q = $request->get('q', '');
+        $data = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $q = $data['q'] ?? '';
         if (strlen(trim($q)) < 2) return response()->json([]);
         return response()->json(
             \App\Models\User::where(function($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
-                      ->orWhere('email', 'like', "%{$q}%")
                       ->orWhere('uid', 'like', "%{$q}%");
             })
-            ->select('id', 'uid', 'name', 'email')
+            ->select('id', 'uid', 'name')
             ->limit(8)
             ->get()
         );
-    })->name('users.search');
+    })->middleware('throttle:20,1')->name('users.search');
 });
 
 // ======================

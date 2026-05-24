@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Trip;
+use App\Models\TripPlace;
 use App\Models\Category;
 use App\Models\Place;
 use App\Models\User;
@@ -50,6 +51,28 @@ class TripMemberInviteTest extends TestCase
                 'uid' => '2345678901',
                 'name' => 'Uid Member',
                 'email' => 'uid-member@example.com',
+            ]);
+    }
+
+    public function test_user_search_does_not_expose_email_addresses(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create([
+            'uid' => '3456789012',
+            'name' => 'Searchable Member',
+            'email' => 'searchable@example.com',
+        ]);
+
+        $response = $this->actingAs($owner)->getJson('/users/search?q=Searchable');
+
+        $response->assertOk()
+            ->assertJsonFragment([
+                'id' => $member->id,
+                'uid' => '3456789012',
+                'name' => 'Searchable Member',
+            ])
+            ->assertJsonMissing([
+                'email' => 'searchable@example.com',
             ]);
     }
 
@@ -124,5 +147,58 @@ class TripMemberInviteTest extends TestCase
             'members' => 2,
         ]);
         $this->assertSame(1, Trip::count());
+    }
+
+    public function test_user_cannot_remove_trip_place_from_another_trip(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        Category::create(['name' => 'Cafe', 'slug' => 'cafe']);
+        $place = Place::factory()->create();
+        $ownerTrip = Trip::create(['user_id' => $owner->id, 'title' => 'Owner trip']);
+        $otherTrip = Trip::create(['user_id' => $otherUser->id, 'title' => 'Other trip']);
+        $otherTripPlace = TripPlace::create([
+            'trip_id' => $otherTrip->id,
+            'place_id' => $place->id,
+            'day_number' => 1,
+            'order' => 0,
+        ]);
+
+        $this->actingAs($owner)
+            ->delete(route('trips.removePlace', [$ownerTrip, $otherTripPlace]))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('trip_places', [
+            'id' => $otherTripPlace->id,
+            'trip_id' => $otherTrip->id,
+        ]);
+    }
+
+    public function test_user_cannot_update_trip_place_time_from_another_trip(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        Category::create(['name' => 'Cafe', 'slug' => 'cafe']);
+        $place = Place::factory()->create();
+        $ownerTrip = Trip::create(['user_id' => $owner->id, 'title' => 'Owner trip']);
+        $otherTrip = Trip::create(['user_id' => $otherUser->id, 'title' => 'Other trip']);
+        $otherTripPlace = TripPlace::create([
+            'trip_id' => $otherTrip->id,
+            'place_id' => $place->id,
+            'day_number' => 1,
+            'order' => 0,
+            'visit_time' => '09:00',
+        ]);
+
+        $this->actingAs($owner)
+            ->patch(route('trips.updatePlaceTime', [$ownerTrip, $otherTripPlace]), [
+                'visit_time' => '18:00',
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('trip_places', [
+            'id' => $otherTripPlace->id,
+            'visit_time' => '09:00',
+        ]);
     }
 }
